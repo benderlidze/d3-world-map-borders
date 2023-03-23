@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Indicator test</title>
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script src="https://d3js.org/topojson.v1.min.js"></script>
+    <script src="https://d3js.org/d3-geo-projection.v2.min.js"></script>
+    <style>
+        body,
+        html {
+            margin: 0px;
+            height: 0px;
+        }
+
+        .parent {
+            display: flex;
+            flex-direction: row;
+            flex-wrap: wrap;
+            justify-content: space-between;
+        }
+
+        .child {
+            flex: 0 1 48%;
+            border: 1px solid #ccc;
+            margin: 10px;
+        }
+
+        div.tooltip {
+            position: absolute;
+            text-align: center;
+            padding: 2px;
+            font: 12px sans-serif;
+            background: lightsteelblue;
+            border: 0px;
+            border-radius: 8px;
+        }
+
+        .highlight {
+            fill: steelblue;
+        }
+
+        .hover {
+            fill: #69c !important;
+            stroke: #333 !important;
+            stroke-width: 2px !important;
+        }
+
+        #info {
+            display: grid;
+            grid-template-columns: auto auto auto auto;
+            width: 100%;
+
+        }
+
+        .country-item {
+            padding: 10px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+
+<body>
+
+    <div id="main">
+        <div id="map1" style="width:100%;height:50vh;"></div>
+        <div id="info"></div>
+    </div>
+
+    <script>
+        const infoDiv = document.getElementById('info')
+        createMap("map1", 'TEST')
+
+        var colorScheme = d3.schemeReds[6];
+        colorScheme.unshift("#ccc")
+        var colorScale = d3.scaleThreshold()
+            .domain([0, 2, 4, 6, 8, 10])
+            .range(colorScheme);
+
+        // create a tooltip
+        var tooltip = d3.select("#main")
+            .append("div")
+            .style("opacity", 0)
+            .attr("class", "tooltip")
+            .style("background-color", "white")
+            .style("border", "solid")
+            .style("border-width", "2px")
+            .style("border-radius", "5px")
+            .style("padding", "5px")
+
+        var mouseover = function (d) {
+            tooltip.style("opacity", 1)
+
+            if (!d3.select(this).classed("highlight")) {
+                d3.select(this).attr("class", "hover");
+            }
+        }
+        var mousemove = function (d, colummnId) {
+            //console.log('d',d);
+            tooltip
+                .html(`${colummnId}<br><strong>${d.properties.name}</strong><br>${d.val}`)
+                .style("left", (d3.event.pageX + 10) + "px")
+                .style("top", (d3.event.pageY + 10) + "px")
+        }
+        var mouseleave = function (d) {
+            tooltip.style("opacity", 0)
+            if (!d3.select(this).classed("highlight")) {
+                d3.select(this).attr("class", "");
+            }
+        }
+
+        function createMap(divId, colummnId) {
+
+            var svgDiv = document.getElementById(divId).getBoundingClientRect();
+            let width = svgDiv.width;
+            let height = svgDiv.height;
+
+            const svg = d3.select("#" + divId)
+                .append('svg')
+                .attr('width', width)
+                .attr('height', height)
+                .append('g')
+                .attr('class', 'map');
+
+            Promise.all([
+                d3.json('https://enjalot.github.io/wwsd/data/world/world-110m.geojson'),
+            ]).then(d => {
+                ready(null, d[0], d[1])
+                console.log('d[0]', d[0]);
+
+                const countries = buildCountryList(d[0])
+                countries.forEach(c => {
+                    buildClickItem(c)
+                })
+            });
+
+            function ready(error, data, csvData) {
+                data.features = data.features.filter(d => d.id !== "GRL" && d.id !== "ATA") //remove GRL and ATA from map 
+                var projection = d3.geoMercator().fitSize([width, height], data);
+                var path = d3.geoPath().projection(projection);
+                const country = {};
+                data.features.forEach(d => { d.val = country[d.id] });
+                svg.append('g')
+                    .attr('class', 'countries')
+                    .selectAll('path')
+                    .data(data.features)
+                    .enter()
+                    .append('path')
+                    .attr('d', path)
+                    .attr("class", "country")
+                    .attr("id", d => d.properties.name)
+                    .attr("id", d => d.properties.name)
+                    .style('fill', d => {
+                        return "#FFF"
+                    })
+                    .style('stroke', 'black')
+                    .style('opacity', 0.8)
+                    .style('stroke-width', 0.3)
+                    .on("mouseover", mouseover)
+                    .on("mousemove", (d) => mousemove(d, colummnId))
+                    .on("mouseleave", mouseleave)
+                    .on("click", () => {
+                        console.log('123',);
+                    })
+            }
+
+            function buildCountryList(geoojson) {
+                return geoojson.features.map(d => d.properties.name);
+            }
+
+            function buildClickItem(item) {
+                //build a list of div countries with click event 
+                const div = document.createElement('div')
+                div.innerText = item
+                div.setAttribute('class', 'country-item')
+                div.addEventListener('click', (e) => {
+                    console.log('item', item);
+                    d3.select(".country").attr("class", "");
+                    d3.select("#" + item).attr("class", "hover");
+                })
+
+                infoDiv.appendChild(div)
+            }
+        }
+    </script>
+</body>
+
+</html>
