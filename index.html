@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Indicator test</title>
+    <title>Map</title>
     <script src="https://d3js.org/d3.v5.min.js"></script>
     <script src="https://d3js.org/topojson.v1.min.js"></script>
     <script src="https://d3js.org/d3-geo-projection.v2.min.js"></script>
@@ -43,7 +43,10 @@
         }
 
         .hover {
-            fill: #69c !important;
+            fill: rgb(255, 123, 0) !important;
+        }
+
+        .mouse-over {
             stroke: #333 !important;
             stroke-width: 2px !important;
         }
@@ -66,13 +69,20 @@
 <body>
 
     <div id="main">
-        <div id="map1" style="width:100%;height:50vh;"></div>
+        <div id="map" style="width:100%;height:50vh;"></div>
         <div id="info"></div>
     </div>
 
     <script>
+        // const mainData = {
+        //     selectedCountries: [],
+        //     xlsxData: []
+        // }
+        let tempData = ''
+        let selectedCountries = []
+
         const infoDiv = document.getElementById('info')
-        createMap("map1", 'TEST')
+        createMap("map")
 
         var colorScheme = d3.schemeReds[6];
         colorScheme.unshift("#ccc")
@@ -92,27 +102,19 @@
             .style("padding", "5px")
 
         var mouseover = function (d) {
-
-
-            if (!d3.select(this).classed("highlight")) {
-                d3.select(this).attr("class", "hover");
-            }
+            this.classList.add("mouse-over");
         }
         var mousemove = function (d, colummnId) {
-            //console.log('d',d);
             tooltip
-                .html(`${colummnId}<br><strong>${d.properties.name}</strong><br>${d.val}`)
+                .html(`<strong>${d.properties.name}</strong><br>${d.val}`)
                 .style("left", (d3.event.pageX + 10) + "px")
                 .style("top", (d3.event.pageY + 10) + "px")
         }
         var mouseleave = function (d) {
-            //tooltip.style("opacity", 0)
-            if (!d3.select(this).classed("highlight")) {
-                d3.select(this).attr("class", "");
-            }
+            this.classList.remove("mouse-over");
         }
 
-        function createMap(divId, colummnId) {
+        function createMap(divId) {
 
             var svgDiv = document.getElementById(divId).getBoundingClientRect();
             let width = svgDiv.width;
@@ -127,17 +129,13 @@
 
             Promise.all([
                 d3.json('https://enjalot.github.io/wwsd/data/world/world-110m.geojson'),
+                d3.csv('https://docs.google.com/spreadsheets/d/e/2PACX-1vTo4paO9vSPtJA721ExKprmGACpXvCk3gmJlyIHel5OJVai9e3outQ6__I0fafyMY8Oxo6uJXgldWz9/pub?output=csv')
             ]).then(d => {
-                ready(null, d[0], d[1])
-                console.log('d[0]', d[0]);
-
-                const countries = buildCountryList(d[0])
-                countries.forEach(c => {
-                    buildClickItem(c)
-                })
+                buildMap(d[0])
+                buildCountryList(d[1])
             });
 
-            function ready(error, data, csvData) {
+            function buildMap(data) {
                 data.features = data.features.filter(d => d.id !== "GRL" && d.id !== "ATA") //remove GRL and ATA from map 
                 var projection = d3.geoMercator().fitSize([width, height], data);
                 var path = d3.geoPath().projection(projection);
@@ -151,8 +149,7 @@
                     .append('path')
                     .attr('d', path)
                     .attr("class", "country")
-                    .attr("id", d => d.properties.name)
-                    .attr("id", d => d.properties.name)
+                    .attr("id", d => d.properties.name.replaceAll(" ", "_"))
                     .style('fill', d => {
                         return "#FFF"
                     })
@@ -163,31 +160,42 @@
                     // .on("mousemove", (d) => mousemove(d, colummnId))
                     .on("mouseleave", mouseleave)
                     .on("click", (d) => {
-                        console.log('123',);
+
+                        console.log('d', d, tempData);
+                        const country = d.properties.name
+
+                        const link = tempData && selectedCountries.includes(country) ? `<div><a href="${tempData['More information']}" target="_blank">More information</a></div>` : ''
+
                         tooltip.style("opacity", 1)
                         tooltip
-                            .html(`${colummnId}<br><strong>${d.properties.name}</strong><br>${d.val}`)
+                            .html(`
+                                <h3>${d.properties.name}</h3>
+                                ${link}
+                            `)
                             .style("left", (d3.event.pageX + 10) + "px")
                             .style("top", (d3.event.pageY + 10) + "px")
                     })
             }
 
-            function buildCountryList(geoojson) {
-                return geoojson.features.map(d => d.properties.name);
-            }
+            function buildCountryList(data) {
+                console.log('data', data);
+                data.map(item => {
+                    const div = document.createElement('div')
+                    div.innerText = item['Name of project']
+                    div.setAttribute('class', 'country-item')
+                    div.addEventListener('click', (e) => {
 
-            function buildClickItem(item) {
-                //build a list of div countries with click event 
-                const div = document.createElement('div')
-                div.innerText = item
-                div.setAttribute('class', 'country-item')
-                div.addEventListener('click', (e) => {
-                    console.log('item', item);
-                    d3.select(".country").attr("class", "");
-                    d3.select("#" + item).attr("class", "hover");
+                        d3.selectAll(".hover").classed("hover", false);//remove previous selection
+                        const countries = item['Country or countries'].split(',').map(d => d.trim())
+                        tempData = item
+                        selectedCountries = countries
+                        console.log('countries', countries);
+                        countries.map(country => {
+                            d3.select("#" + country.replaceAll(" ", "_")).attr("class", "hover");
+                        })
+                    })
+                    infoDiv.appendChild(div)
                 })
-
-                infoDiv.appendChild(div)
             }
         }
     </script>
