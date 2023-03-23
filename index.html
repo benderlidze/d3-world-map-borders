@@ -92,7 +92,7 @@
             .style("padding", "5px")
 
         var mouseover = function (d) {
-            tooltip.style("opacity", 1)
+
 
             if (!d3.select(this).classed("highlight")) {
                 d3.select(this).attr("class", "hover");
@@ -106,7 +106,7 @@
                 .style("top", (d3.event.pageY + 10) + "px")
         }
         var mouseleave = function (d) {
-            tooltip.style("opacity", 0)
+            //tooltip.style("opacity", 0)
             if (!d3.select(this).classed("highlight")) {
                 d3.select(this).attr("class", "");
             }
@@ -160,10 +160,15 @@
                     .style('opacity', 0.8)
                     .style('stroke-width', 0.3)
                     .on("mouseover", mouseover)
-                    .on("mousemove", (d) => mousemove(d, colummnId))
+                    // .on("mousemove", (d) => mousemove(d, colummnId))
                     .on("mouseleave", mouseleave)
-                    .on("click", () => {
+                    .on("click", (d) => {
                         console.log('123',);
+                        tooltip.style("opacity", 1)
+                        tooltip
+                            .html(`${colummnId}<br><strong>${d.properties.name}</strong><br>${d.val}`)
+                            .style("left", (d3.event.pageX + 10) + "px")
+                            .style("top", (d3.event.pageY + 10) + "px")
                     })
             }
 
