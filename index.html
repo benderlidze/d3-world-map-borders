@@ -15,19 +15,6 @@
             height: 0px;
         }
 
-        .parent {
-            display: flex;
-            flex-direction: row;
-            flex-wrap: wrap;
-            justify-content: space-between;
-        }
-
-        .child {
-            flex: 0 1 48%;
-            border: 1px solid #ccc;
-            margin: 10px;
-        }
-
         div.tooltip {
             position: absolute;
             text-align: center;
@@ -62,6 +49,11 @@
             padding: 10px;
             cursor: pointer;
         }
+
+        #map {
+            height: 700px;
+            border: 1px solid red;
+        }
     </style>
 </head>
 
@@ -69,7 +61,7 @@
 <body>
 
     <div id="main">
-        <div id="map" style="width:100%;height:50vh;"></div>
+        <div id="map"></div>
         <div id="info"></div>
     </div>
 
@@ -122,10 +114,8 @@
 
             const svg = d3.select("#" + divId)
                 .append('svg')
-                .attr('width', width)
-                .attr('height', height)
-                .append('g')
-                .attr('class', 'map');
+                .attr("viewBox", `0 0 ${width} ${height}`)
+                .attr("preserveAspectRatio", "xMidYMid meet");
 
             Promise.all([
                 d3.json('https://enjalot.github.io/wwsd/data/world/world-110m.geojson'),
@@ -163,9 +153,7 @@
 
                         console.log('d', d, tempData);
                         const country = d.properties.name
-
                         const link = tempData && selectedCountries.includes(country) ? `<div><a href="${tempData['More information']}" target="_blank">More information</a></div>` : ''
-
                         tooltip.style("opacity", 1)
                         tooltip
                             .html(`
