@@ -120,7 +120,7 @@
                 .style("background-color", "#265454");
 
             Promise.all([
-                d3.json('https://enjalot.github.io/wwsd/data/world/world-110m.geojson'),
+                d3.json('world-110m.json'),
                 d3.csv('https://docs.google.com/spreadsheets/d/e/2PACX-1vTo4paO9vSPtJA721ExKprmGACpXvCk3gmJlyIHel5OJVai9e3outQ6__I0fafyMY8Oxo6uJXgldWz9/pub?output=csv')
             ]).then(d => {
                 buildMap(d[0])
@@ -162,16 +162,11 @@
                 const link = tempData ? `<div><a href="${tempData['More information']}" target="_blank">More information</a></div>` : ''
                 tooltip.style("opacity", 1)
                 tooltip.html(`<h3>${tempData['Name of project']}</h3>${link}`)
-                // .style("left", x + "px")
-                // .style("top", y + "px")
 
                 const tBbox = tooltip.node().getBoundingClientRect()
-                console.log('tBbox', tBbox);
-                const centerX = (tBbox.width / 2)
-                const height = tBbox.height
 
-                tooltip.style("top", (y - height - 10) + "px")
-                tooltip.style("left", x + "px")
+                tooltip.style("top", (y - tBbox.height - 15) + "px")
+                tooltip.style("left", x - (tBbox.width / 2) + "px")
 
             }
 
@@ -186,8 +181,8 @@
                         var bbox = {
                             x: Infinity,
                             y: Infinity,
-                            width: -Infinity,
-                            height: -Infinity
+                            x1: -Infinity,
+                            y1: -Infinity
                         };
 
                         d3.selectAll(".hover").classed("hover", false);//remove previous selection
@@ -196,26 +191,39 @@
                         selectedCountries = countries
                         console.log('countries', countries);
                         countries.map(country => {
+                            console.log('countries', country);
                             const c = d3.select("#" + country.replaceAll(" ", "_"))
                             c.attr("class", "hover");
                             const circleBBox = c.node().getBBox();
                             bbox.x = Math.min(bbox.x, circleBBox.x);
                             bbox.y = Math.min(bbox.y, circleBBox.y);
-                            bbox.width = Math.max(bbox.width, circleBBox.width);
-                            bbox.height = Math.max(bbox.height, circleBBox.height);
+                            bbox.x1 = Math.max(bbox.x1, circleBBox.x + circleBBox.width);
+                            bbox.y1 = Math.max(bbox.y1, circleBBox.y + circleBBox.height);
+                            
                         })
 
                         console.log('COUNTRY bbox', bbox);
                         tooltipBbox = bbox
-                        createTooltip(tempData, bbox.x + bbox.width / 2, bbox.y)
+                        createTooltip(tempData, bbox.x + (bbox.x1 - bbox.x) / 2, bbox.y)
 
 
 
-                        svg.append('circle')
-                            .attr('cx', bbox.x + bbox.width / 2)
-                            .attr('cy', bbox.y)
-                            .attr('r', 2)
-                            .style('fill', 'red');
+                        // svg.append('circle')
+                        //     .attr('cx', bbox.x)
+                        //     .attr('cy', bbox.y)
+                        //     .attr('r', 5)
+                        //     .style('fill', 'red');
+
+                        // svg.append('circle')
+                        //     .attr('cx', bbox.x1)
+                        //     .attr('cy', bbox.y1)
+                        //     .attr('r', 5)
+                        //     .style('fill', 'red');
+                        // svg.append('circle')
+                        //     .attr('cx', bbox.x + (bbox.x1 - bbox.x) / 2)
+                        //     .attr('cy', bbox.y)
+                        //     .attr('r', 5)
+                        //     .style('fill', 'blue');
 
 
                     })
