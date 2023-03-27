@@ -43,7 +43,6 @@
             display: grid;
             grid-template-columns: 1fr 1fr 1fr 1fr;
             width: 100%;
-            margin-top: 20px;
         }
 
         .country-item {
@@ -53,7 +52,6 @@
 
         #map {
             height: 700px;
-            margin-top: 20px;
         }
     </style>
 </head>
@@ -116,8 +114,10 @@
 
             const svg = d3.select("#" + divId)
                 .append('svg')
-                .attr("viewBox", `0 0 ${width} ${height}`)
+                .attr("viewBox", `0 0 ${width} ${height} `)
                 .attr("preserveAspectRatio", "xMidYMid meet")
+                //add padding 
+                .style("padding", 10)
                 .style("background-color", "#265454");
 
             Promise.all([
